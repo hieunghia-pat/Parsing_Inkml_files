@@ -1,7 +1,9 @@
-from parsing_inkml.ParsingInkml import ParsingInkml
+from add_background.AddBackground import AddBackground
 
-images_file = "images/grayscale_lines"
-inkml_files = "InkData_line"
 
-total_files = ParsingInkml(inkml_files, images_file, thickness=20)()
-print(total_files)
+image_dir = "images/non_grayscale_paragraphs"
+inkml_dir = "InkData_paragraph"
+background_dir = "ocr_background/old_paper_background"
+
+total_images = AddBackground(bg_dir=background_dir, inkml_dir=inkml_dir, img_dir=image_dir, thickness=20).stack_backgrounds()
+print(total_images)
