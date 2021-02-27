@@ -145,7 +145,7 @@ class AddBackground:
                 img = np.concatenate([img, space_above, txt_image], axis=0)
 
             # adding space at the bottom
-            space_bottom = np.ones(shape=(randint(1, 100), bg_w, 3)) * 255
+            space_bottom = np.ones(shape=(randint(1, 50), bg_w, 3)) * 255
             img = np.concatenate([img, space_bottom], axis=0)
 
             # resize the background to fit the text image 
@@ -184,7 +184,7 @@ class AddBackground:
 
                 if method == "show":
                     print("\n{}".format(gt_txt))
-                    cv.imshow("image", new_img)
+                    cv.imshow("image", new_img / 255)
                     cv.waitKey(1000)
                     print("=======================")
                 else: 

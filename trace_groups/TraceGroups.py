@@ -26,9 +26,9 @@ class TTraceGroup:
         
     def create_image(self):
         # get the new width and height
-        w = int((self.delta_x / self.max_width) * self.width)
+        w = round((self.delta_x / self.max_width) * self.width)
         scale = self.delta_x / self.delta_y
-        h = int(w / scale)
+        h = round(w / scale)
 
         img = np.ones(shape=(h, w, 3)) * 255
 
@@ -43,13 +43,13 @@ class TTraceGroup:
             thickness = value * 3 
             color = value * 5 
 
-            return int(thickness), int(color)
+            return round(thickness), round(color)
 
         for xs, ys in zip(x_coords, y_coords):
             duration = len(xs)
             for i in range(2, duration):
-                pt1 = (int(xs[i-1]), int(ys[i-1]))
-                pt2 = (int(xs[i]), int(ys[i]))
+                pt1 = (round(xs[i-1]), round(ys[i-1]))
+                pt2 = (round(xs[i]), round(ys[i]))
                 if ((i / duration) <= 0.05) or ((i / duration) >= 0.95):
                     img = cv.line(img, pt1, pt2, (5, 5, 5), thickness=1, lineType=cv.LINE_8)
                 else:
