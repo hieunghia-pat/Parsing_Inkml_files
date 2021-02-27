@@ -1,14 +1,16 @@
+from random import randint
 import numpy as np
 import gc 
 import cv2 as cv
+from math import pi, tan, exp
 
 class TTraceGroup:
-    def __init__(self, _id, truth, traces, size, thickness=2):
+    def __init__(self, _id, truth, traces, max_width, width):
         self._id = _id
         self.traces = traces
         self.truth = truth
-        self.thickness = thickness
-        self.size = size
+        self.max_width = max_width
+        self.width = width
 
         self.xmax = max([trace.coordinates.xmax for trace in self.traces])
         self.xmin = min([trace.coordinates.xmin for trace in self.traces])
@@ -18,33 +20,53 @@ class TTraceGroup:
 
         self.delta_x = self.xmax - self.xmin
         self.delta_y = self.ymax - self.ymin
+
+    def get_size(self):
+        return self.delta_x, self.delta_y
         
     def create_image(self):
-        w = self.size[0]
+        # get the new width and height
+        w = int((self.delta_x / self.max_width) * self.width)
         scale = self.delta_x / self.delta_y
-        h = w / scale
+        h = int(w / scale)
 
-        img = np.ones(shape=(int(h), int(w), 3))
-        img = np.full_like(img, 255)
+        img = np.ones(shape=(h, w, 3)) * 255
 
         x_coords, y_coords = [], []
         for trace in self.traces:
             x_coords.append((np.array(trace.coordinates.x_coordinates) - self.xmin) / self.delta_x * w)
-            y_coords.append((np.array(trace.coordinates.y_coordinates) - self.ymin) /self.delta_y * h)
+            y_coords.append((np.array(trace.coordinates.y_coordinates) - self.ymin) / self.delta_y * h)
+
+        def get_color(x):
+            alpha = 0.7 
+            value = 1 / (1 + exp(-alpha * x))
+            thickness = value * 3 
+            color = value * 5 
+
+            return int(thickness), int(color)
 
         for xs, ys in zip(x_coords, y_coords):
-            for i in range(2, len(xs)):
+            duration = len(xs)
+            for i in range(2, duration):
                 pt1 = (int(xs[i-1]), int(ys[i-1]))
                 pt2 = (int(xs[i]), int(ys[i]))
-                cv.line(img, pt1, pt2, (0, 0, 0), thickness=2, lineType=cv.FILLED)
+                if ((i / duration) <= 0.05) or ((i / duration) >= 0.95):
+                    img = cv.line(img, pt1, pt2, (5, 5, 5), thickness=1, lineType=cv.LINE_8)
+                else:
+                    delta_x = abs(xs[i-1]- xs[i])
+                    delta_y = abs(ys[i-1]- ys[i])
+                    dy_dx = delta_y / delta_x if delta_x != 0 else 10e10
+                    thickness, color = get_color(dy_dx)
+                    img = cv.line(img, pt1, pt2, (color, color, color), thickness=thickness, lineType=cv.LINE_8)
 
-        return img
+        return img, self.truth
 
     def show_image(self):
         cv.namedWindow("image")
         print(self.truth)
         print("Press any key to close the image window")
-        img = self.create_image()
+        
+        img, _ = self.create_image()
         cv.imshow("image", img)
         cv.waitKey()
         cv.destroyAllWindows()
