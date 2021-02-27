@@ -1,8 +1,6 @@
 import cv2 as cv 
 import numpy as np 
 import xml.etree.ElementTree as ET
-
-from numpy.core.defchararray import index
 from coordinates.Coordinates import TCoordinate
 from traces.Trace import TTrace
 from trace_groups.TraceGroups import TTraceGroup
@@ -52,6 +50,7 @@ class AddBackground:
 
         return img.astype(int)
 
+    # deprecated method 
     def stack_backgrounds(self):
         # paper_bg_dir: Path object - direction to folder containing paper backgrounds 
 
@@ -115,7 +114,11 @@ class AddBackground:
 
         return img
 
-    def stack_multiple_background(self):
+    def stack_multiple_background(self, min_txt=1, max_txt=5, get_txt_rep=1, method="show"):
+        # min_txt: minimum number of text images to stack on top of the background 
+        # max_txt: maximum number of text images to stack on top of the background
+        # get_txt_rep: get the text images get_txt_rep times to stack on top of a background
+
         # this method will stack multiple texts on each background image, so we require a portrait background image 
         # file names of these background images
         bg_images = list(self.bg_dir.glob("*.jpg"))
@@ -159,21 +162,40 @@ class AddBackground:
             
             return img, txts
         
+        print("Prepairing ...")
         # parsing inkml files
         numbering = 0
         bg_w = 1024
         txt_max_w = self.texts_statistic()
         variant_space = [0.02, 0.05, 0.07]
+        print("Processing ...")
         # for each background image
         for bg_file in bg_images:
             bg_img = cv.imread(str(bg_file))
-            texts = []
-            for _ in range(randint(2, 5)):
-                inkml_file = inkml_files[randint(0, len(inkml_files)-1)]
-                TraceGroups = self.parsing(inkml_file, txt_max_w, bg_w)
-                # get a text 
-                texts.append(TraceGroups[randint(0, len(TraceGroups)-1)])
-            new_img, gt_txt = construct_document(bg_img, texts, variant_space, bg_w + 200)
-            numbering += 1
+            for _ in range(get_txt_rep):
+                texts = []
+                for _ in range(randint(min_txt, max_txt)):
+                    inkml_file = inkml_files[randint(0, len(inkml_files)-1)]
+                    TraceGroups = self.parsing(inkml_file, txt_max_w, bg_w)
+                    # get a text 
+                    texts.append(TraceGroups[randint(0, len(TraceGroups)-1)])
+                new_img, gt_txt = construct_document(bg_img, texts, variant_space, bg_w + 200)
+                numbering += 1
+
+                if method == "show":
+                    print("\n{}".format(gt_txt))
+                    cv.imshow("image", new_img)
+                    cv.waitKey(1000)
+                    print("=======================")
+                else: 
+                    # save the image
+                    img_file = "{}.jpg".format(numbering)
+                    cv.imwrite(os.path.join(self.img_dir, img_file), new_img)
+                    # write the ground truth text to csv file
+                    csv_file = open(os.path.join(self.img_dir, "gt.csv"), "a")
+                    csv_file.write("{img_name}, [{gt}]\n".format(img_name=img_file, gt=gt_txt))
+                    csv_file.close()
+
+        print("Process completed.")
 
         return numbering
