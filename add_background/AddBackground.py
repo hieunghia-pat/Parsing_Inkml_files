@@ -1,5 +1,6 @@
 import cv2 as cv 
 import numpy as np 
+import pandas as pd
 import xml.etree.ElementTree as ET
 from coordinates.Coordinates import TCoordinate
 from traces.Trace import TTrace
@@ -136,7 +137,7 @@ class AddBackground:
             txts = ""
             for txt_idx in range(len(txt_images)):
                 txt_image, txt = txt_images[txt_idx].create_image()
-                txts += "\n{}".format(txt)
+                txts += "{}".format(txt)
                 # get random space 
                 relative_space = int(spaces[randint(0, len(spaces)-1)] * bg_h)
                 # get random indent
@@ -169,6 +170,8 @@ class AddBackground:
         txt_max_w = self.texts_statistic()
         variant_space = [0.02, 0.05, 0.07]
         print("Processing ...")
+
+        gt_texts = {"image_id": [], "text": []}
         # for each background image
         for bg_file in bg_images:
             bg_img = cv.imread(str(bg_file))
@@ -192,9 +195,11 @@ class AddBackground:
                     img_file = "{}.jpg".format(numbering)
                     cv.imwrite(os.path.join(self.img_dir, img_file), new_img)
                     # write the ground truth text to csv file
-                    csv_file = open(os.path.join(self.img_dir, "gt.csv"), "a")
-                    csv_file.write("{img_name}, [{gt}]\n".format(img_name=img_file, gt=gt_txt))
-                    csv_file.close()
+                    gt_texts["image_id"].append(img_file)
+                    gt_texts["text"].append(gt_txt)
+
+        if method == "save":
+            pd.DataFrame(gt_texts).to_csv(os.path.join(self.img_dir, "ground_truth.csv"))
 
         print("Process completed.")
 

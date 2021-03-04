@@ -40,7 +40,7 @@ class TTraceGroup:
         def get_color(x):
             alpha = 0.7 
             value = 1 / (1 + exp(-alpha * x))
-            thickness = value * 3 
+            thickness = value * 2
             color = value * 5 
 
             return round(thickness), round(color)
